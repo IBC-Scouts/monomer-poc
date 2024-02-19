@@ -68,6 +68,7 @@ func (s *ChainServerTestSuite) SetupTest() {
 		txIndexerDb,
 		&appEndpoint,
 		&eeEndpoint,
+		&server.Endpoint{},
 		app,
 		NewLocalClient,
 		&genesis,

@@ -57,6 +57,7 @@ const (
 	abciServerAddressFlag       = "abci-server-address"
 	appGrpcAddressFlag          = "app-grpc-address"
 	appRpcAddressFlag           = "app-rpc-address"
+	gethRpcAddressFlag          = "geth-engine-addr"
 	transportFlag               = "transport"
 	eeRpcAddressFlag            = "ee-http-server-address"
 	dbBackendFlag               = "db-backend"
@@ -86,6 +87,7 @@ type Config struct {
 	PeptideEngineServerRpc  Endpoint
 	GenesisConfig           rollup.Genesis
 	GenesisTime             time.Time
+	GethEngineAddr          Endpoint
 	CpuProfile              string
 	PprofRpc                Endpoint
 	DbBackend               DbBackendType
@@ -126,6 +128,11 @@ func (c *Config) WithAbciServerRpc() *Config {
 
 func (c *Config) WithAbciServerGrpc() *Config {
 	c.AbciServerGrpc = NewEndpoint(c.mustReadStringFlag(appGrpcAddressFlag))
+	return c
+}
+
+func (c *Config) WithGethEngineAddr() *Config {
+	c.GethEngineAddr = NewEndpoint(c.mustReadStringFlag(gethRpcAddressFlag))
 	return c
 }
 
@@ -339,6 +346,7 @@ func AddStartCommandFlags(cmd *cobra.Command) {
 		"localhost:26657",
 		"Address of the JSON-RPC app server. Set - to disable.",
 	)
+	cmd.Flags().String(gethRpcAddressFlag, "", "Address of the geth JSON-RPC HTTP endpoint.")
 	cmd.Flags().String(abciServerAddressFlag,
 		"-",
 		"Address to listen on. Set - to disable. Eg. tcp://localhost:26658, unix:///tmp/polymer.sock",

@@ -27,6 +27,7 @@ import (
 	bfttypes "github.com/cometbft/cometbft/types"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/ethereum-optimism/optimism/op-node/rollup/derive"
+	"github.com/ethereum-optimism/optimism/op-service/client"
 	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -39,6 +40,7 @@ import (
 	eetypes "github.com/polymerdao/monomer/app/node/types"
 	"github.com/polymerdao/monomer/app/peptide"
 	peptidecommon "github.com/polymerdao/monomer/app/peptide/common"
+	"github.com/polymerdao/monomer/app/peptide/gethclient"
 	"github.com/polymerdao/monomer/app/peptide/payloadstore"
 	rpcee "github.com/polymerdao/monomer/app/peptide/rpc_ee"
 	"github.com/polymerdao/monomer/app/peptide/store"
@@ -76,6 +78,7 @@ func NewPeptideNode(
 	txstoreDb tmdb.DB,
 	appEndpoint *Endpoint,
 	eeEndpoint *Endpoint,
+	clientEndpoint *Endpoint,
 	chainApp *peptide.PeptideApp,
 	clientCreator AbciClientCreator,
 	genesis *PeptideGenesis,
@@ -92,12 +95,19 @@ func NewPeptideNode(
 		logger,
 	)
 
+	// TODO(jim): hardcoding of auth secret
+	gethRPC, err := gethclient.NewRPCClient(clientEndpoint.FullAddress(), []byte{123})
+	if err != nil {
+		panic(err)
+	}
+
 	config := rpcee.DefaultConfig(eeEndpoint.Host)
-	eeServer := rpcee.NewEeRpcServer(config, engine.GetExecutionEngineAPIs(node, enabledApis, logger), logger)
+	eeServer := rpcee.NewEeRpcServer(config, engine.GetExecutionEngineAPIs(node, gethRPC, enabledApis, logger), logger)
 
 	node.cometServer = cometServer
 	node.cometRpcServer = cometRpcServer
 	node.eeServer = eeServer
+	node.gethClient = gethRPC // TODO(jim): might not need to keep this here tbh
 	node.nodeServices = server.NewCompositeService(node, cometRpcServer, eeServer)
 	return node
 }
@@ -114,6 +124,7 @@ func NewPeptideNodeFromConfig(
 		txstoreDb,
 		&config.PeptideCometServerRpc,
 		&config.PeptideEngineServerRpc,
+		&config.GethEngineAddr,
 		app,
 		NewLocalClient,
 		genesis,
@@ -190,6 +201,7 @@ type PeptideNode struct {
 	cometServer    *cometbft_rpc.CometServer
 	cometRpcServer *cometbft_rpc.RPCServer
 	eeServer       *rpcee.EERPCServer
+	gethClient     client.RPC
 	*service.BaseService
 	nodeServices service.Service
 }
@@ -232,8 +244,9 @@ func newNode(chainApp *peptide.PeptideApp, clientCreator AbciClientCreator, bs s
 	}
 	cs.BaseService = service.NewBaseService(logger, "PeptideNode", cs)
 
-	cs.resume()
-	cs.resetClient()
+	// TODO(jim): Uncommented these temporarily
+	// cs.resume()
+	// cs.resetClient()
 	return cs
 }
 

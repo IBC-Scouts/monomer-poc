@@ -157,6 +157,7 @@ func startCmd() *cobra.Command {
 				WithPeptideCometServerRpc().
 				WithPeptideEngineServerRpc().
 				WithGenesisConfig(*eetypes.NewGenesisConfig(eetypes.ZeroHash, 0)).
+				WithGethEngineAddr().
 				WithDbBackend().
 				WithPrometheusRetentionTime().
 				WithAdminApi().
