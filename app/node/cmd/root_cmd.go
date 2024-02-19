@@ -3,10 +3,12 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/telemetry"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/cosmos/cosmos-sdk/telemetry"
 
 	tmdb "github.com/cometbft/cometbft-db"
 	"github.com/ethereum-optimism/optimism/op-service/eth"
@@ -26,6 +28,7 @@ func RootCmd() *cobra.Command {
 
 	rootCmd.AddCommand(
 		startCmd(),
+		startInMemCmd(),
 		exportCmd(),
 		genAccountsCmd(),
 		initCmd(),
@@ -297,5 +300,79 @@ func genAccountsCmd() *cobra.Command {
 	cmd.Flags().Uint64("num-accounts", 5, "Number of accounts to generate")
 	cmd.Flags().Uint64("starting-seq-num", 0, "Starting sequence number")
 
+	return cmd
+}
+
+func startInMemCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "start-in-mem",
+		Short: "Start the Peptide Node",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logger := server.DefaultLogger()
+			config := server.NewConfig(cmd).
+				WithHomeDir().
+				WithAbciServerRpc().
+				WithAbciServerGrpc().
+				WithPeptideCometServerRpc().
+				WithPeptideEngineServerRpc().
+				WithGenesisConfig(*eetypes.NewGenesisConfig(eetypes.ZeroHash, 0)).
+				WithDbBackend().
+				WithPrometheusRetentionTime().
+				WithAdminApi().
+				WithCpuProfile().
+				WithIavlLazyLoading().
+				WithIavlDisableFastNode().
+				WithPprofRpc().
+				WithLogger(logger)
+
+			appdb := tmdb.NewMemDB()
+			bsdb := tmdb.NewMemDB()
+			txIndexerDb := tmdb.NewMemDB()
+			chainId := "123"
+			app := peptide.New(chainId, "", appdb, logger)
+
+			accounts := peptest.Accounts
+			validatorAccounts := peptest.ValidatorAccounts
+			stateBytes, err := json.Marshal(app.SimpleGenesis(accounts, validatorAccounts))
+
+			genesis := &node.PeptideGenesis{
+				GenesisTime: time.Now(),
+				AppState:    stateBytes,
+				ChainID:     chainId,
+			}
+
+			_, err = node.InitChain(app, bsdb, genesis)
+
+			peptideNode, err := node.NewPeptideNodeFromConfig(app, bsdb, txIndexerDb, genesis, config)
+			if err != nil {
+				return fmt.Errorf("failed to create peptide node: %w", err)
+			}
+
+			stopCpuProfiling, err := server.StartCpuProfiler(config)
+			if err != nil {
+				return err
+			}
+			defer stopCpuProfiling()
+
+			if err := peptideNode.Service().Start(); err != nil {
+				return err
+			} else {
+				logger.Info("Press Ctrl+C to stop the server", "homedir", config.HomeDir)
+			}
+
+			// Listen for the kill signals
+			sigCh := make(chan os.Signal, 1)
+			signal.Notify(sigCh, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+
+			// Wait for the signal from sigCh, then stop Peptide Node gracefully
+			sig := <-sigCh
+			logger.Info("Received signal", "signal", sig)
+			peptideNode.Service().Stop()
+
+			return nil
+		},
+	}
+
+	server.AddStartCommandFlags(cmd)
 	return cmd
 }

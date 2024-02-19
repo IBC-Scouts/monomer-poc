@@ -19,9 +19,10 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	teststaking "github.com/cosmos/cosmos-sdk/x/staking/testutil"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/cosmos/ibc-go/v7/testing/simapp"
+	"github.com/cosmos/ibc-go/v7/testing/simapp/params"
 	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/notbdu/gm/app"
-	"github.com/notbdu/gm/app/params"
 	"github.com/samber/lo"
 )
 
@@ -29,7 +30,7 @@ import (
 type PeptideApp struct {
 	// App is the ABCI-compatible App
 	// TODO: IMPORT YOUR ABCI APP HERE
-	*app.App
+	*simapp.SimApp
 
 	ValSet               *tmtypes.ValidatorSet
 	EncodingConfig       *params.EncodingConfig
@@ -58,7 +59,7 @@ func setPrefixes(accountAddressPrefix string) {
 
 func init() {
 	// Set prefixes
-	setPrefixes(app.AccountAddressPrefix)
+	setPrefixes("cosmos") // TODO(jim): Hardcode for now
 }
 
 var DefaultConsensusParams = &tmproto.ConsensusParams{
@@ -102,8 +103,8 @@ func NewWithOptions(options PeptideAppOptions, logger tmlog.Logger) *PeptideApp 
 		"iavl_lazy_loading", options.IAVLLazyLoading,
 		"iavl_disable_fast_node", options.IAVLDisableFastNode,
 	)
-	encoding := app.MakeEncodingConfig()
-	mainApp := app.New(
+	encoding := simapp.MakeTestEncodingConfig()
+	mainApp := simapp.NewSimApp(
 		logger,
 		options.DB,
 		nil,
@@ -119,7 +120,7 @@ func NewWithOptions(options PeptideAppOptions, logger tmlog.Logger) *PeptideApp 
 	)
 
 	newPeptideApp := &PeptideApp{
-		App:                  mainApp,
+		SimApp:               mainApp,
 		ValSet:               &tmtypes.ValidatorSet{},
 		EncodingConfig:       &encoding,
 		ChainId:              options.ChainID,
@@ -151,7 +152,7 @@ func (a *PeptideApp) InitChainWithEmptyGenesis() abci.ResponseInitChain {
 	return a.InitChainWithGenesisState(genState)
 }
 
-func (a *PeptideApp) InitChainWithGenesisState(state app.GenesisState) abci.ResponseInitChain {
+func (a *PeptideApp) InitChainWithGenesisState(state simapp.GenesisState) abci.ResponseInitChain {
 	stateBytes := lo.Must(json.MarshalIndent(state, "", " "))
 	req := &abci.RequestInitChain{
 		ChainId:         a.ChainId,
@@ -250,8 +251,8 @@ func (a *PeptideApp) RollbackToHeight(height int64) error {
 
 // DefaultGenesis create a default GenesisState, which is a map
 // with module name as keys and JSON-marshaled genesisState per module as values
-func (a *PeptideApp) DefaultGenesis() app.GenesisState {
-	return app.NewDefaultGenesisState(a.AppCodec())
+func (a *PeptideApp) DefaultGenesis() simapp.GenesisState {
+	return simapp.ModuleBasics.DefaultGenesis(a.AppCodec()) // TODO(jim): ok?
 }
 
 // SimpleGenesis creates a genesis with given genesis accounts `genAccs` and one derived validator.
@@ -265,7 +266,7 @@ func (a *PeptideApp) SimpleGenesis(
 	genAccs SignerAccounts,
 	valAccs SignerAccounts,
 	balances ...banktypes.Balance,
-) app.GenesisState {
+) simapp.GenesisState {
 	if len(balances) == 0 {
 		balances = genAccs.NewBalances(a.BondDenom, a.VotingPowerReduction)
 	}
@@ -289,7 +290,7 @@ func (a *PeptideApp) MultiDelegationGenesis(
 	delegators SignerAccounts,
 	validators SignerAccounts,
 	delegations ValidatorSetDelegation,
-) app.GenesisState {
+) simapp.GenesisState {
 	genesisState := a.DefaultGenesis()
 	//
 	// set x/auth genesis
@@ -354,9 +355,9 @@ func (a *PeptideApp) Clone() *PeptideApp {
 }
 
 // ExportGenesis returns a copy of the app's genesis state
-func (a *PeptideApp) ExportGenesis() app.GenesisState {
-	exportedApp := lo.Must(a.ExportAppStateAndValidators(false, nil, nil))
-	var genesisState app.GenesisState
+func (a *PeptideApp) ExportGenesis() simapp.GenesisState {
+	exportedApp := lo.Must(a.ExportAppStateAndValidators(false, nil))
+	var genesisState simapp.GenesisState
 	lo.Must0(tmjson.Unmarshal(exportedApp.AppState, &genesisState))
 	return genesisState
 }
