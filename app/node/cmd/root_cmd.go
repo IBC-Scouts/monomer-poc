@@ -3,10 +3,11 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/telemetry"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/cosmos/cosmos-sdk/telemetry"
 
 	tmdb "github.com/cometbft/cometbft-db"
 	"github.com/ethereum-optimism/optimism/op-service/eth"
@@ -170,7 +171,7 @@ func startCmd() *cobra.Command {
 				return err
 			}
 
-			appdb := server.OpenDB(node.AppStateDbName, config)
+			appdb := tmdb.NewMemDB() // server.OpenDB(node.AppStateDbName, config)
 			defer appdb.Close()
 
 			_, err = telemetry.New(
@@ -189,10 +190,10 @@ func startCmd() *cobra.Command {
 				IAVLLazyLoading:     config.IavlLazyLoading,
 			}, logger)
 
-			txIndexerDb := server.OpenDB(node.TxStoreDbName, config)
+			txIndexerDb := tmdb.NewMemDB() //server.OpenDB(node.TxStoreDbName, config)
 			defer txIndexerDb.Close()
 
-			bsdb := server.OpenDB(node.BlockStoreDbName, config)
+			bsdb := tmdb.NewMemDB() // server.OpenDB(node.BlockStoreDbName, config)
 			defer bsdb.Close()
 
 			peptideNode, err := node.NewPeptideNodeFromConfig(app, bsdb, txIndexerDb, genesis, config)
