@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum-optimism/optimism/op-node/rollup"
 	"log"
 	"math/big"
 	"net"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/ethereum-optimism/optimism/op-node/rollup"
 
 	"github.com/armon/go-metrics"
 	tmdb "github.com/cometbft/cometbft-db"
@@ -734,7 +735,7 @@ func (cs *PeptideNode) ExportState(ctx *rpctypes.Context, commit bool, path stri
 		cs.commitBlockAndUpdateNodeInfo()
 	}
 
-	exportedApp := lo.Must(cs.chainApp.ExportAppStateAndValidators(false, nil, nil))
+	exportedApp := lo.Must(cs.chainApp.ExportAppStateAndValidators(false, nil))
 	exportedAppBytes := lo.Must(tmjson.MarshalIndent(exportedApp, "", "  "))
 
 	if err := os.WriteFile(path, exportedAppBytes, os.ModePerm); err != nil {
