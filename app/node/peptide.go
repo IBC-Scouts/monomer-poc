@@ -36,6 +36,7 @@ import (
 	"github.com/polymerdao/monomer/app/node/server"
 	cometbft_rpc "github.com/polymerdao/monomer/app/node/server/cometbft_rpc"
 	"github.com/polymerdao/monomer/app/node/server/engine"
+	"github.com/polymerdao/monomer/app/node/server/poc_rpc"
 	eetypes "github.com/polymerdao/monomer/app/node/types"
 	"github.com/polymerdao/monomer/app/peptide"
 	peptidecommon "github.com/polymerdao/monomer/app/peptide/common"
@@ -93,7 +94,12 @@ func NewPeptideNode(
 	)
 
 	config := rpcee.DefaultConfig(eeEndpoint.Host)
-	eeServer := rpcee.NewEeRpcServer(config, engine.GetExecutionEngineAPIs(node, enabledApis, logger), logger)
+
+	// Collect all rpc apis.
+	rpcAPIs := engine.GetExecutionEngineAPIs(node, enabledApis, logger)
+	rpcAPIs = append(rpcAPIs, poc_rpc.GetInterceptorEntrypointAPI(node, logger))
+
+	eeServer := rpcee.NewEeRpcServer(config, rpcAPIs, logger)
 
 	node.cometServer = cometServer
 	node.cometRpcServer = cometRpcServer

@@ -341,7 +341,11 @@ func startInMemCmd() *cobra.Command {
 				ChainID:     chainId,
 			}
 
-			_, err = node.InitChain(app, bsdb, genesis)
+			block, err := node.InitChain(app, bsdb, genesis)
+			genesis.GenesisBlock = eth.BlockID{
+				Hash:   block.Hash(),
+				Number: uint64(block.Height()),
+			}
 
 			peptideNode, err := node.NewPeptideNodeFromConfig(app, bsdb, txIndexerDb, genesis, config)
 			if err != nil {
