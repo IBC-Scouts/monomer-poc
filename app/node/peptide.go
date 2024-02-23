@@ -246,7 +246,6 @@ func newNode(chainApp *peptide.PeptideApp, clientCreator AbciClientCreator, bs s
 
 func (cs *PeptideNode) resume() {
 	lastBlockData := cs.bs.BlockByLabel(eth.Unsafe)
-	fmt.Printf("cs.bs = %v\n", cs.bs)
 	if lastBlockData == nil {
 		panic("could not load current block")
 	}

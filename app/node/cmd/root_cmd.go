@@ -353,8 +353,6 @@ func startInMemCmd() *cobra.Command {
 				Hash:   block.Hash(),
 				Number: uint64(block.Height()),
 			}
-			genesisJson, _ := json.MarshalIndent(genesis, "", "  ")
-			logger.Info("peptide genesis", genesisJson)
 
 			peptideNode, err := node.NewPeptideNodeFromConfig(app, bsdb, txIndexerDb, genesis, config)
 			if err != nil {
@@ -366,6 +364,11 @@ func startInMemCmd() *cobra.Command {
 				return err
 			}
 			defer stopCpuProfiling()
+
+			// Dump genesis before starting the server, we read genesis block in op-e2e.
+			if err := genesis.Save(config.HomeDir, true); err != nil {
+				return err
+			}
 
 			if err := peptideNode.Service().Start(); err != nil {
 				return err
