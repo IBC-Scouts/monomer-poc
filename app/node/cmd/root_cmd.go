@@ -334,6 +334,9 @@ func startInMemCmd() *cobra.Command {
 			accounts := peptest.Accounts
 			validatorAccounts := peptest.ValidatorAccounts
 			stateBytes, err := json.Marshal(app.SimpleGenesis(accounts, validatorAccounts))
+			if err != nil {
+				return err
+			}
 
 			genesis := &node.PeptideGenesis{
 				GenesisTime: time.Now(),
@@ -342,10 +345,16 @@ func startInMemCmd() *cobra.Command {
 			}
 
 			block, err := node.InitChain(app, bsdb, genesis)
+			if err != nil {
+				return err
+			}
+
 			genesis.GenesisBlock = eth.BlockID{
 				Hash:   block.Hash(),
 				Number: uint64(block.Height()),
 			}
+			genesisJson, _ := json.MarshalIndent(genesis, "", "  ")
+			logger.Info("peptide genesis", genesisJson)
 
 			peptideNode, err := node.NewPeptideNodeFromConfig(app, bsdb, txIndexerDb, genesis, config)
 			if err != nil {
