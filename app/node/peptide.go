@@ -595,7 +595,8 @@ func (cs *PeptideNode) commitBlockAndUpdateNodeInfo() {
 func (cs *PeptideNode) startBuildingBlock() *Block {
 	// fill in block fields with L1 data
 	block := cs.fillBlockWithL1Data(&Block{})
-	cs.applyL1Txs(block)
+	// Don't apply L1s for time being.
+	// cs.applyL1Txs(block)
 	cs.applyBlockL2Txs(block)
 	return block
 }
