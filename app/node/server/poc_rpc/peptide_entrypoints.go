@@ -32,12 +32,12 @@ type interceptEndpoints struct {
 	logger server.Logger
 }
 
-// AddToTxMempool adds a transaction to the mempool. It takes raw bytes containing the marshalled
+// AddTxToMempool adds a transaction to the mempool. It takes raw bytes containing the marshalled
 // sdk.Msg and should try to create a Tx from it.
-func (p *interceptEndpoints) AddMsgToTxMempool(msg []byte) error {
-	p.logger.Info("Adding msg to mempool", "msg", msg)
+func (p *interceptEndpoints) AddTxToMempool(tx []byte) error {
+	p.logger.Info("Adding tx to mempool", "tx", tx)
 
-	// p.node.AddToTxMempool(tx)
+	p.node.AddToTxMempool(tx)
 
 	return nil
 }
