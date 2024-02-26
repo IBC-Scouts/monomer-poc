@@ -562,6 +562,8 @@ func (cs *PeptideNode) deliverTxs(txs bfttypes.Txs) error {
 		if err != nil {
 			return fmt.Errorf("failed to DeliverTxSync tx-%d in block %d due to: %w", i, height, err)
 		}
+		cs.logger.Info("delivered tx to chainApp", "height", height, "result", deliverTxResp)
+
 		txResult := &abcitypes.TxResult{
 			Height: height,
 			Tx:     tx,
