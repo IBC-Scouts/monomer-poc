@@ -22,10 +22,10 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	teststaking "github.com/cosmos/cosmos-sdk/x/staking/testutil"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/cosmos/ibc-go/v7/testing/simapp"
-	"github.com/cosmos/ibc-go/v7/testing/simapp/params"
 	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/notbdu/gm/app"
+	"github.com/polymerdao/monomer/app/peptide/simapp"
+	"github.com/polymerdao/monomer/app/peptide/simapp/params"
 	"github.com/samber/lo"
 )
 
