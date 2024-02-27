@@ -3,10 +3,7 @@ package peptide
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"reflect"
 	"time"
-	"unsafe"
 
 	tmdb "github.com/cometbft/cometbft-db"
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -22,10 +19,10 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	teststaking "github.com/cosmos/cosmos-sdk/x/staking/testutil"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/cosmos/ibc-go/v7/testing/simapp"
-	"github.com/cosmos/ibc-go/v7/testing/simapp/params"
 	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/notbdu/gm/app"
+	"github.com/polymerdao/monomer/app/peptide/simapp"
+	"github.com/polymerdao/monomer/app/peptide/simapp/params"
 	"github.com/samber/lo"
 )
 
@@ -130,32 +127,6 @@ func NewWithOptions(options PeptideAppOptions, logger tmlog.Logger) *PeptideApp 
 		BondDenom:            sdk.DefaultBondDenom,
 		VotingPowerReduction: sdk.DefaultPowerReduction,
 	}
-
-	r := reflect.ValueOf(newPeptideApp).Elem()
-
-	f := r.FieldByName("sealed")
-	if !f.IsValid() {
-		panic("field not found")
-	}
-
-	if f.IsValid() {
-		// Check if we can set the field
-		if !f.CanSet() {
-			f = reflect.NewAt(f.Type(), unsafe.Pointer(f.UnsafeAddr())).Elem()
-		}
-
-		if f.CanSet() {
-			// Use reflection to bypass unexported status
-			f.SetBool(false)
-			fmt.Println("privateField set to true using reflection and unsafe.")
-		} else {
-			panic("cannot set")
-		}
-	} else {
-		panic("field not found #2")
-	}
-
-	newPeptideApp.SetAnteHandler(nil)
 
 	return newPeptideApp
 }
